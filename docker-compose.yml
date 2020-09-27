@@ -1,0 +1,21 @@
+version: '3'
+services:
+  data-himawari:
+    container_name: data-himawari_master
+    build: .
+    image: data-himawari:latest
+#    runtime: nvidia
+#    environment:
+#      - NVIDIA_VISIBLE_DEVICES=all
+#      - ./web.env
+#    command: nvidia-smi
+    tty: true
+    command: /bin/bash
+    volumes:
+      - .:/src
+    env_file:
+      - ./web.env
+    ports:
+      - "8008:8008"
+      - "6006:6006"
+      - "6007:6007"
