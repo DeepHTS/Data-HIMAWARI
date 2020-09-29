@@ -47,6 +47,10 @@ def get_tup_transform(dict_meta, file_type='jma'):
 
 
 def add_meta_data(path_grid, dict_meta, layer_name, file_type='jma'):
+    dict_meta_info = {
+        'path_local': path_grid,
+        'layer': layer_name,
+    }
     if file_type == 'jma':
         offsets = float(dict_meta['{0}#{1}'.format(layer_name, 'add_offset')])
         long_name = dict_meta['{0}#{1}'.format(layer_name, 'long_name')]
@@ -63,11 +67,29 @@ def add_meta_data(path_grid, dict_meta, layer_name, file_type='jma'):
             src.scales = (scales,)
             src.units = (unit_name,)
 
+        dict_meta_info.update(
+            offset=offsets,
+            long_name=long_name,
+            nodata=nodata,
+            scale=scales,
+            unit=unit_name
+        )
+
+        # dict_meta_info = {
+        #     'path_local': path_grid,
+        #     'layer': layer_name,
+        #     'offset': offsets,
+        #     'long_name': long_name,
+        #     'nodata': nodata,
+        #     'scale': scales,
+        #     'unit': unit_name
+        # }
+
         # resolution = float(dict_meta['NC_GLOBAL#grid_interval'])
         # uly = float(dict_meta['NC_GLOBAL#upper_left_latitude'])
         # ulx = float(dict_meta['NC_GLOBAL#upper_left_longitude'])
 
-    return
+    return dict_meta_info
 
 
 def get_single_layer_gtiff(path_local, layer_name=None, dir_save=None):
@@ -83,7 +105,7 @@ def get_single_layer_gtiff(path_local, layer_name=None, dir_save=None):
         print("can't open sub datasets by GDAL \n {}".format(path_local))
         return
 
-    list_path = []
+    list_dict_meta_info = []
     for dataset in sub_datasets:
         layer = dataset[0].split(':')[-1]
 
@@ -116,22 +138,19 @@ def get_single_layer_gtiff(path_local, layer_name=None, dir_save=None):
         out_ds.FlushCache()
         out_ds = None
 
-        add_meta_data(path_grid, dict_meta, layer, file_type='jma')
-        list_path.append(path_grid)
+        dict_meta_info = add_meta_data(path_grid, dict_meta, layer, file_type='jma')
+        list_dict_meta_info.append(dict_meta_info)
 
-    return list_path
+    return list_dict_meta_info
 
 
 def main():
     path_local = 'notebook/data/NC_H08_20160714_0000_r14_FLDK.02701_02601.nc'
     list_layer = get_layer_name(path_local)
     print(list_layer)
-    list_path = get_single_layer_gtiff(path_local, layer_name=None, dir_save='notebook/data')
-    print(list_path)
-
+    list_dict_meta_info = get_single_layer_gtiff(path_local, layer_name=None, dir_save='notebook/data')
+    print(list_dict_meta_info)
 
 if __name__ == "__main__":
     main()
 # todo: upload to s3 in new def
-# todo: time range -> ftp directory -> serach -> list ftp path -> multiprocessing
-#   prepare only searching function

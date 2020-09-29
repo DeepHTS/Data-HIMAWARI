@@ -2,6 +2,10 @@ from tqdm import tqdm
 from multiprocessing import Pool
 import boto3
 import os
+import urllib
+
+import pandas as pd
+
 
 def argwrapper(args):
     return args[0](*args[1:])
@@ -84,3 +88,41 @@ def transfer_to_s3(path_local, dir_local_parent=None, dir_s3_parent=None, remove
         os.remove(path_local)
 
     return url_s3
+
+def update_data_list_df(path_org, df_new, duplicate_check_column=None):
+    """ update new data to existing data in DataFrame
+
+    Args:
+        path_org (str): URL or path on local to existing DataFrame file in csv
+        df_new (pd.DataFrame): new data
+        duplicate_check_column (list of str): list of column name in the DataFrame for checking duplication
+
+    Returns: (pd.DataFrame) updated (or raw if existing file is not exist) data list
+
+    """
+    if duplicate_check_column is None:
+        duplicate_check_column = ['filename']
+    try:
+        df_org = pd.read_csv(path_org)
+    except (urllib.error.URLError, FileNotFoundError) as e:
+        print(path_org, ' is not found.')
+        return df_new
+
+    df_merged = pd.concat([df_new, df_org])
+    df_merged = df_merged.drop_duplicates(subset=duplicate_check_column, keep='last')
+    return df_merged
+
+
+def get_s3_url_head(s3_bucket_name):
+    """ get variables for downloading and uploading files to S3, and head of url for downloading from S3
+
+    Returns:
+
+    """
+    s3 = boto3.client('s3')
+    bucket_location = s3.get_bucket_location(Bucket=s3_bucket_name)
+    url_s3_head = "https://{0}.s3-{1}.amazonaws.com".format(
+        s3_bucket_name,
+        bucket_location['LocationConstraint']
+    )
+    return url_s3_head
