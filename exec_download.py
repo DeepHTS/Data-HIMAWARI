@@ -4,7 +4,7 @@ from src.download import DataManagerJaxaHimawari
 
 def main():
     date_start = datetime.datetime(year=2019, month=1, day=1)
-    date_stop = datetime.datetime(year=2019, month=1, day=31)
+    date_stop = datetime.datetime(year=2019, month=12, day=31)
     datatype = 'r14'
     product = 'jma.netcdf'
     layer_name = ['tbb_07', 'tbb_14', 'tbb_15'] #None #['tbb_07', 'tbb_14', 'tbb_15']

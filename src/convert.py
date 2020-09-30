@@ -114,7 +114,11 @@ def get_single_layer_gtiff(path_local, layer_name=None, dir_save=None):
 
         band_ds = gdal.Open(dataset[0], gdal.GA_ReadOnly)
         band_array = band_ds.ReadAsArray()
-        data_type = band_array.dtype.name
+        # todo: check left log
+        try:
+            data_type = band_array.dtype.name
+        except AttributeError:
+            continue
 
         # band_array = np.flipud(band_array.T)
         srs = osr.SpatialReference()
