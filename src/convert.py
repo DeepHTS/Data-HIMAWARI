@@ -116,7 +116,7 @@ def get_single_layer_gtiff(path_local, layer_name=None, dir_save=None):
         band_array = band_ds.ReadAsArray()
         data_type = band_array.dtype.name
 
-        band_array = np.flipud(band_array.T)
+        # band_array = np.flipud(band_array.T)
         srs = osr.SpatialReference()
         srs.ImportFromEPSG(espg_grid)
 
@@ -127,8 +127,8 @@ def get_single_layer_gtiff(path_local, layer_name=None, dir_save=None):
         path_grid = os.path.join(dir_save, filename_grid)
 
         out_ds = gdal.GetDriverByName('GTiff').Create(path_grid,
-                                                      band_ds.RasterYSize,
                                                       band_ds.RasterXSize,
+                                                      band_ds.RasterYSize,
                                                       1,  # Number of bands
                                                       dict_gdt.get(data_type, gdal.GDT_Unknown),
                                                       ['TILED=YES'])

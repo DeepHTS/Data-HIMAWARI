@@ -14,6 +14,9 @@ from src.search import search_ftp_path
 from src.convert import get_single_layer_gtiff
 from src.helper import transfer_to_s3, argwrapper, imap_unordered_bar, get_s3_url_head, update_data_list_df
 
+import warnings
+warnings.filterwarnings('ignore')
+
 DIR_PARENT_RAW_LOCAL = 'data/JAXA_HIMAWARI/netcdf'
 DIR_PARENT_CONVERTED_LOCAL = 'data/JAXA_HIMAWARI/gtiff'
 DIR_PARENT_RAW_S3 = 'data/JAXA_HIMAWARI/netcdf'
@@ -114,7 +117,7 @@ class DataManagerJaxaHimawari(object):
             list_element = filename.split('_')
             dict_meta_info.update(
                 satellite_name=DICT_SATELLITE_NAME.get(list_element[1]),
-                observation_start_datetime=datetime.datetime.strptime(list_element[2] + '_' + list_element[2],
+                observation_start_datetime=datetime.datetime.strptime(list_element[2] + '_' + list_element[3],
                                                                       '%Y%m%d_%H%M').replace(tzinfo=pytz.utc),
                 layer_name=list_element[3]
             )
@@ -209,21 +212,22 @@ class DataManagerJaxaHimawari(object):
 
         df_record_s3.to_csv(path_record_local, index=False)
         transfer_to_s3(path_local=path_record_local, dir_local_parent=self.dir_parent_converted_local,
-                       dir_s3_parent=self.dir_parent_converted_s3, remove_local_file=False, multiprocessing=False)
+                       dir_s3_parent=self.dir_parent_converted_s3, remove_local_file=False, multiprocessing=False,
+                       s3_bucket_name=self.s3_bucket_name)
 
         return df_record_s3
 
 
 def main():
     date_start = datetime.datetime(year=2015, month=7, day=12)
-    date_stop = datetime.datetime(year=2015, month=7, day=16)
+    date_stop = datetime.datetime(year=2015, month=7, day=14)
     datatype = 'r14'
     product = 'jma.netcdf'
-    layer_name = None
-    convert_to_gtiff = True,
-    save_s3 = False,
-    remove_local_files = False
-    processes = 3
+    layer_name = ['tbb_07', 'tbb_14', 'tbb_15'] #None #['tbb_07', 'tbb_14', 'tbb_15']
+    convert_to_gtiff = True
+    save_s3 = True
+    remove_local_files = True
+    processes = 15
 
     data_manager_jaxa_himawari = DataManagerJaxaHimawari(processes=processes)
     data_manager_jaxa_himawari.get_raster_data(date_start=date_start,
