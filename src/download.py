@@ -120,7 +120,7 @@ class DataManagerJaxaHimawari(object):
                 satellite_name=DICT_SATELLITE_NAME.get(list_element[1]),
                 observation_start_datetime=datetime.datetime.strptime(list_element[2] + '_' + list_element[3],
                                                                       '%Y%m%d_%H%M').replace(tzinfo=pytz.utc),
-                layer_name=list_element[3]
+                layer_name=list_element[4]
             )
         return dict_meta_info
 
