@@ -1,8 +1,10 @@
 import os
+from copy import deepcopy
 from ftplib import FTP
 import datetime
 from tqdm import tqdm
 import urllib
+
 
 import numpy as np
 from osgeo import gdal, osr
@@ -74,25 +76,10 @@ def add_meta_data(path_grid, dict_meta, layer_name, file_type='jma'):
             scale=scales,
             unit=unit_name
         )
-
-        # dict_meta_info = {
-        #     'path_local': path_grid,
-        #     'layer': layer_name,
-        #     'offset': offsets,
-        #     'long_name': long_name,
-        #     'nodata': nodata,
-        #     'scale': scales,
-        #     'unit': unit_name
-        # }
-
-        # resolution = float(dict_meta['NC_GLOBAL#grid_interval'])
-        # uly = float(dict_meta['NC_GLOBAL#upper_left_latitude'])
-        # ulx = float(dict_meta['NC_GLOBAL#upper_left_longitude'])
-
     return dict_meta_info
 
 
-def get_single_layer_gtiff(path_local, layer_name=None, dir_save=None):
+def get_single_layer_gtiff(path_local, layer_name=None, dir_save=None, dict_meta_info_raw=None):
     espg_grid = int(ESPG_GRID)
     dict_gdt = DICT_GDT
 
@@ -118,6 +105,7 @@ def get_single_layer_gtiff(path_local, layer_name=None, dir_save=None):
         try:
             data_type = band_array.dtype.name
         except AttributeError:
+            print('nodata', path_local)
             continue
 
         # band_array = np.flipud(band_array.T)
@@ -143,6 +131,10 @@ def get_single_layer_gtiff(path_local, layer_name=None, dir_save=None):
         out_ds = None
 
         dict_meta_info = add_meta_data(path_grid, dict_meta, layer, file_type='jma')
+        if dict_meta_info_raw is not None:
+            dict_meta_info_raw.update(dict_meta_info)
+            dict_meta_info = deepcopy(dict_meta_info_raw)
+
         list_dict_meta_info.append(dict_meta_info)
 
     return list_dict_meta_info

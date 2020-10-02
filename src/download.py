@@ -105,6 +105,7 @@ class DataManagerJaxaHimawari(object):
                 ftp.retrbinary('RETR {0}'.format(path_ftp), f.write)
         except (urllib.error.URLError, FileNotFoundError) as e:
             print('FAILED: {0}'.format(path_ftp))
+            return None
 
         return path_local
 
@@ -125,12 +126,18 @@ class DataManagerJaxaHimawari(object):
 
     def exec_get_raster(self, ftp_path, convert_to_gtiff, product, layer_name, save_s3=False, remove_local_files=False):
         path_local = self.download_from_ftp(ftp_path)
+        if path_local is None:
+            list_dict_meta_info_converted = {}
+            return list_dict_meta_info_converted
+
         dict_meta_info_raw = self.get_dict_meta_info_from_filename(path_local, product)
 
         # convert to gtiff
         if convert_to_gtiff:
             list_dict_meta_info_converted = get_single_layer_gtiff(path_local, layer_name=layer_name,
-                                                                   dir_save=self.dir_parent_converted_local)
+                                                                   dir_save=self.dir_parent_converted_local,
+                                                                   dict_meta_info_raw=dict_meta_info_raw
+                                                                   )
         else:
             list_dict_meta_info_converted = {}
 
