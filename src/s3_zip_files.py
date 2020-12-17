@@ -1,10 +1,13 @@
 import os
-import datetime
+import datetime, pytz
 from tqdm import tqdm
 import pandas as pd
 from tqdm import tqdm
 import shutil
 from typing import List, Optional, Tuple, Dict
+import sys
+import time
+
 
 import rasterio
 from rasterio.windows import Window, transform
@@ -29,7 +32,23 @@ def get_cropped_gtiff(path_img: str, path_out: str, lon: float, lat: float, arra
 
     """
     # test
-    src = rasterio.open(path_img)
+    retries = 1
+    max_try = 3
+    success = False
+    while not success and retries <= max_try:
+        try:
+            src = rasterio.open(path_img)
+            success = True
+        except rasterio.errors.RasterioIOError:
+            wait = retries * 5
+            print('error waiting')
+            sys.stdout.flush()
+            time.sleep(wait)
+            retries += 1
+
+    if not success:
+        print('{} is missing'.format(path_img))
+
 
     py, px = src.index(lon, lat)
     if pos == 'center':
@@ -99,12 +118,17 @@ def zip_file(list_url, out_file_name, dir_tempfile_head='data/temp', dir_parent_
 
 
 def zip_himawari(df: pd.DataFrame, col_datetime: str = 'observation_start_datetime', col_path: str = 'url_s3',
-                 interval_days: int = 7, interval_min=30, processes=1):
+                 interval_days: int = 7, interval_min=30, processes=1, start_datetime=None, end_datetime=None):
     col_doy = 'doy'
     col_year = 'year'
     col_group = 'group'
     col_outname = 'out_name'
     df[col_datetime] = pd.to_datetime(df[col_datetime])
+    if start_datetime is not None:
+        df = df[df[col_datetime] >= start_datetime]
+    if end_datetime is not None:
+        df = df[df[col_datetime] <= end_datetime]
+
     if interval_min is not None:
         sr_bool = df[col_datetime].dt.minute.apply(lambda x: True if x % interval_min == 0 else False)
         df = df[sr_bool]
@@ -126,6 +150,7 @@ def zip_himawari(df: pd.DataFrame, col_datetime: str = 'observation_start_dateti
         return "{0}-{1}".format(date_start.strftime('%Y%m%d'), date_end.strftime('%Y%m%d'))
 
     df_group[col_outname] = df_group.apply(name_add, axis=1)
+    print(df_group[col_outname][0], df_group[col_outname][len(df_group)-1])
 
     if processes == 1:
         for i, row in tqdm(df_group.iterrows(), total=len(df_group)):
@@ -147,4 +172,5 @@ if __name__ == '__main__':
     # path = 'https://nict-ets9.s3-ap-northeast-1.amazonaws.com/data/JAXA_HIMAWARI/gtiff/file_meta_list.csv'
     df = pd.read_csv(path)
     processes = 1
-    zip_himawari(df, processes=processes)
+    start_datetime = datetime.datetime(year=2018, month=1, day=1, tzinfo=pytz.utc)
+    zip_himawari(df, processes=processes, start_datetime=start_datetime)
